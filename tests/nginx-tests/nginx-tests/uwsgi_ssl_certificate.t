@@ -3,8 +3,8 @@
 # (C) Sergey Kandaurov
 # (C) Nginx, Inc.
 
-# Tests for http proxy module with proxy certificate to ssl backend.
-# The proxy_ssl_certificate and proxy_ssl_password_file directives.
+# Tests for http uwsgi module with client certificate to ssl backend.
+# The uwsgi_ssl_certificate and uwsgi_ssl_password_file directives.
 
 ###############################################################################
 
@@ -23,7 +23,7 @@ use Test::Nginx;
 select STDERR; $| = 1;
 select STDOUT; $| = 1;
 
-my $t = Test::Nginx->new()->has(qw/http http_ssl proxy/)
+my $t = Test::Nginx->new()->has(qw/http http_ssl uwsgi/)
 	->has_daemon('openssl')->plan(5);
 
 $t->write_file_expand('nginx.conf', <<'EOF');
@@ -42,27 +42,29 @@ http {
         listen       127.0.0.1:8080;
         server_name  localhost;
 
-        proxy_ssl_session_reuse off;
+        uwsgi_ssl_session_reuse off;
 
         location /verify {
-            proxy_pass https://127.0.0.1:8081/;
-            proxy_ssl_certificate 1.example.com.crt;
-            proxy_ssl_certificate_key 1.example.com.key;
+            uwsgi_pass suwsgi://127.0.0.1:8081;
+            uwsgi_ssl_certificate 1.example.com.crt;
+            uwsgi_ssl_certificate_key 1.example.com.key;
         }
 
         location /fail {
-            proxy_pass https://127.0.0.1:8081/;
-            proxy_ssl_certificate 2.example.com.crt;
-            proxy_ssl_certificate_key 2.example.com.key;
+            uwsgi_pass suwsgi://127.0.0.1:8081;
+            uwsgi_ssl_certificate 2.example.com.crt;
+            uwsgi_ssl_certificate_key 2.example.com.key;
         }
 
         location /encrypted {
-            proxy_pass https://127.0.0.1:8082/;
-            proxy_ssl_certificate 3.example.com.crt;
-            proxy_ssl_certificate_key 3.example.com.key;
-            proxy_ssl_password_file password;
+            uwsgi_pass suwsgi://127.0.0.1:8082;
+            uwsgi_ssl_certificate 3.example.com.crt;
+            uwsgi_ssl_certificate_key 3.example.com.key;
+            uwsgi_ssl_password_file password;
         }
     }
+
+    # stub to implement SSL logic for tests
 
     server {
         listen       127.0.0.1:8081 ssl;
@@ -74,10 +76,8 @@ http {
         ssl_verify_client optional_no_ca;
         ssl_trusted_certificate 1.example.com.crt;
 
-        location / {
-            add_header X-Verify $ssl_client_verify;
-            add_header X-Name   $ssl_client_s_dn;
-        }
+        add_header X-Verify $ssl_client_verify always;
+        add_header X-Name   $ssl_client_s_dn   always;
     }
 
     server {
@@ -90,9 +90,7 @@ http {
         ssl_verify_client optional_no_ca;
         ssl_trusted_certificate 3.example.com.crt;
 
-        location / {
-            add_header X-Verify $ssl_client_verify;
-        }
+        add_header X-Verify $ssl_client_verify always;
     }
 }
 
