@@ -1,0 +1,17 @@
+ngx_addon_name=ngx_http_donkey_run_module
+
+HTTP_DONKEY_RUN_SRCS=" \
+    $ngx_addon_dir/ngx_http_donkey_run_module.c  \
+    $ngx_addon_dir/ngx_http_donkey_run_common.c  \
+    "
+HTTP_DONKEY_RUN_DEPS=" \
+    $ngx_addon_dir/ngx_http_donkey_run_module.h  \
+    $ngx_addon_dir/ngx_http_donkey_run_common.h  \
+    "
+
+HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES ngx_http_donkey_run_module"
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS $HTTP_DONKEY_RUN_SRCS"
+NGX_ADDON_DEPS="$NGX_ADDON_DEPS $HTTP_DONKEY_RUN_DEPS"
+
+HTTP_INCS="$HTTP_INCS $RUN_INC"
+CORE_LIBS="$CORE_LIBS $RUN_LIB/librun.a -lstdc++ -ljsoncpp -lglog -lsqlite3"
